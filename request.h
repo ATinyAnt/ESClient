@@ -81,6 +81,64 @@ static inline std::string MakePairString(const std::string &key, const std::stri
 	return ss.str();
 }
 
+void Escape(const char word, std::string &result)
+{
+	switch(word)
+	{
+	case '\\':
+		result += "\\\\";
+		break;
+	case '\"':
+		result += "\\\"";
+		break;
+	case '\r':
+	case '\n':
+	case '\t':
+		return;
+	default:
+		result.push_back(word);
+	}
+}
+
+void RegExpEscape(const char word, std::string &result)
+{
+	switch(word)
+	{
+	case '(':
+	case ')':
+	case '[':
+	case ']':
+	case '{':
+	case '}':
+	case '<':
+	case '>':
+	case '*':
+	case '+':
+	case '.':
+	case '?':
+	case '^':
+	case '|':
+	case '&':
+	case '~':
+		result += "\\\\";
+		result += word;
+		
+		break;		
+	case '\\':
+		result += "\\\\\\\\";
+		break;
+	case '\"':
+		result += "\\\\\\\"";
+		break;
+	case '\r':
+	case '\n':
+	case '\t':
+		return;
+	default:
+		result.push_back(word);
+	}
+}
+
 static inline std::string Range1(const std::string &field, const std::string &cond1, const std::string &other = ""){
 	std::stringstream ss;
 	ss << "{\"range\":{\"" << field << "\":{" << cond1;
@@ -103,14 +161,9 @@ static inline std::string Range2(const std::string &field, const std::string &co
 	return ss.str();
 }
 
-static inline std::string Sort(const std::vector<std::string> &fields) {
-	return MakePair("sort", MakeArray(fields));
-}
-
-
 static inline std::string Missing(const std::string &field, const std::string &prefix) {
 	std::stringstream ss;
-	ss << "{\"sort\":{\"" << field << "\":\"" << prefix << "\"}}";
+	ss << "{\"missing\":{\"" << field << "\":\"" << prefix << "\"}}";
 	return ss.str();
 }
 
@@ -120,7 +173,7 @@ static inline std::string Prefix(const std::string &field, const std::string &pr
 	return ss.str();
 }
 
-static inline std::string Regexp(const std::string &field, const std::string &regexp) {
+static inline std::string RegExp(const std::string &field, const std::string &regexp) {
 	std::stringstream ss;
 	ss << "{\"regexp\":{\"" << field << "\":\"" << regexp << "\"}}";
 	return ss.str();
