@@ -1,9 +1,11 @@
 
-a ElsaticSearch client for C++
-Only encode the ElsaticSearch's DSL,not include Http module
+a ElsaticSearch client for C++  
+Only encode the ElsaticSearch's DSL,not include Http module  
 
 Example:
 ```c
+#include "request.h"
+
 Request r;
 std::string dsl = r.Size(10).Source({"id"}).Query(Regexp("name", ".*Tiny.*"));
 printf("%s\n", dsl.c_str());
