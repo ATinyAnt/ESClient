@@ -179,17 +179,29 @@ static inline std::string RegExp(const std::string &field, const std::string &re
 	return ss.str();
 }
 
-template <class T>
-static inline std::string Term(const std::string &field, T value) {
+template <class T, class U = int>
+static inline std::string TermDSL(const std::string &field, const T &value, U boost = 0) {
 	std::stringstream ss;
-	ss << "{\"term\":{\"" << field << "\":" << value << "}}";
+	if (boost != 0)
+		ss << "{\"term\":{\"" << field << "\":{\"term\":" << value << ",\"boost\":" << boost << "}}}";
+	else
+		ss << "{\"term\":{\"" << field << "\":" << value << "}}";
 	return ss.str();
 }
 
-static inline std::string Term(const std::string &field, const std::string &value) {
-	std::stringstream ss;
-	ss << "{\"term\":{\"" << field << "\":\"" << value << "\"}}";
-	return ss.str();
+template <class T = int>
+static inline std::string Term(const std::string &field, const char *value, T boost = 0) {
+	return TermDSL(field, "\"" + std::string(value) + "\"", boost);
+}
+
+template <class T = int>
+static inline std::string Term(const std::string &field, const std::string &value, T boost = 0) {
+	return TermDSL(field, "\"" + value + "\"", boost);
+}
+
+template <class T, class U = int>
+static inline std::string Term(const std::string &field, T value, U boost = 0) {
+	return TermDSL(field, value, boost);
 }
 
 template <class T>
@@ -205,23 +217,34 @@ static inline std::string Terms(const std::string &field, const std::vector<std:
 	return ss.str();
 }
 
-template <class T>
-static inline std::string Match(const std::string &field, T value) {
+template <class T, class U = int>
+static inline std::string MatchDSL(const std::string &field, const T &value, U boost) {
 	std::stringstream ss;
-	ss << "{\"match\":{\"" << field << "\":" << value << "}}";
+	if (boost != 0)
+		ss << "{\"match\":{\"" << field << "\":{\"query\":" << value << ",\"boost\":" << boost << "}}}";
+	else
+		ss << "{\"match\":{\"" << field << "\":" << value << "}}";
 	return ss.str();
 }
 
-static inline std::string Match(const std::string &field, const std::string &value) {
-	std::stringstream ss;
-	ss << "{\"match\":{\"" << field << "\":\"" << value << "\"}}";
-	return ss.str();
+template <class T = int>
+static inline std::string Match(const std::string &field, const char *value, T boost = 0) {
+	return MatchDSL(field, "\"" + std::string(value) + "\"", boost);
 }
 
-static inline std::string MatchAnd(const std::string &field, const std::string &value) {
-	std::stringstream ss;
-	ss << "{\"match\":{\"" << field << "\":{\"query\":\"" << value << "\",\"operator\":\"and\"}}}";
-	return ss.str();
+template <class T = int>
+static inline std::string Match(const std::string &field, const std::string &value, T boost = 0) {
+	return MatchDSL(field, "\"" + value + "\"", boost);
+}
+
+template <class T, class U = int>
+static inline std::string Match(const std::string &field, T value, U boost = 0) {
+	return MatchDSL(field, value, boost);
+}
+
+template <class T = int>
+static inline std::string MatchAnd(const std::string &field, const std::string &value, T boost = 0) {
+	return MatchDSL(field, "\"" + value + "\",\"operator\":\"and\"", boost);
 }
 
 static inline std::string Bool(const std::string &fields) {
@@ -231,9 +254,7 @@ static inline std::string Bool(const std::string &fields) {
 }
 
 static inline std::string Bool(const std::vector<std::string> &fields) {
-	std::stringstream ss;
-	ss << "{\"bool\":{" << MakeObject(fields) << "}}";
-	return ss.str();
+	return Bool(MakeObject(fields));
 }
 
 static inline std::string Must(const std::vector<std::string> &fields) {

@@ -20,7 +20,7 @@ namespace TestES
 		Request r;
 		std::string dsl = r.Size(10).Source({"name"}).Query(
 			BMust({
-				Term("id",567)
+				Term("id","2356",1.5)
 			})
 		);
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
@@ -86,6 +86,13 @@ namespace TestES
 		std::string dsl = m.GetDsl();
 
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun6()
+	{
+		Request r;
+		std::string dsl = r.Size(10).Source({ "id" }).Query(MatchAnd("name", "Tiny Ant"));
+		printf("%s:%s\n",  __FUNCTION__, dsl.c_str());
 	}
 
 }
