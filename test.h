@@ -11,7 +11,7 @@ namespace TestES
 	void Fun1()
 	{
 		Request r;
-		std::string dsl = r.Size(10).Source({"name"}).Query(Prefix("id", "441283"));
+		std::string dsl = r.Size(10).Source({ "id" }).Query(Regexp("name", ".*Tiny.*"));
 		printf("%s:%s\n",  __FUNCTION__, dsl.c_str());
 	}
 
