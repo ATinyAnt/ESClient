@@ -40,7 +40,7 @@ namespace TestES
 		Request r;
 
 		std::string dsl = r.Size(10).Source({"name"}).Sort(
-			{MakeObject("timestamp",MakeObjectString("order", "desc"))}
+			{MakeObject("timestamp",MakeObject("order", "desc"))}
 		).Query(
 			Lt("id", 567)
 		);
@@ -52,7 +52,7 @@ namespace TestES
 		Request r1;
 
 		std::string dsl1 = r1.Size(10).Source({"name"}).Sort(
-			{MakeObject("timestamp",MakeObjectString("order", "desc"))}
+			{MakeObject("timestamp",MakeObject("order", "desc"))}
 		).Query(
 			Lt("id", 567)
 		);
@@ -71,7 +71,7 @@ namespace TestES
 		<< MSearch("", "", dsl1)
 		<< MSearch("test_index", "test_type", dsl2);
 
-		std::string dsl = m.GetDsl();
+		std::string dsl = m.Dsl();
 
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
 	}
@@ -95,7 +95,7 @@ namespace TestES
 		Request r;
 
 		std::string dsl = r.Size(10).Source({ "name" }).Sort(
-		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+		{ MakeObject("timestamp",MakeObject("order", "desc")) }
 			).Query(
 				Gt("id", 567)
 				);
@@ -108,7 +108,7 @@ namespace TestES
 		Request r;
 
 		std::string dsl = r.Size(10).Source({ "name" }).Sort(
-		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+		{ MakeObject("timestamp",MakeObject("order", "desc")) }
 			).Query(
 				Gt("id", "5ab")
 				);
@@ -131,9 +131,42 @@ namespace TestES
 		Request r;
 
 		std::string dsl = r.Size(10).Source({ "name" }).Sort(
-		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+		{ MakeObject("timestamp",MakeObject("order", "desc")) }
 			).Query(
 				GtLt("id", "5ab", "6ab")
+			);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun12()
+	{
+		std::string dsl = Request().Size(10).Source({ "name" }).Query(
+			Nested("child", BMust({Prefix("child.info","nice")}))
+				);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun13()
+	{
+		std::string dsl = Request().Size(10).Source({ "name" }).Sort(
+		{
+				MakeObject("offer.price", Object().M(
+					{
+						MakePair("mode", "avg"),
+						MakePair("order", "asc")	,
+						NestedFilter("offer", Term("offer.color","blue"))
+					})
+				)
+		}).Query(
+				Term("product", "chocolate")
+			);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun14()
+	{
+		std::string dsl = Request().Size(10).Query(
+			Terms("test", { "product", "chocolate" })
 			);
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
 	}

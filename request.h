@@ -118,34 +118,74 @@ namespace ES
 		return ss.str(); \
 	}
 
-template <class T>
-static inline std::string MakeArray(const std::vector<T> &values) {
-	uint32_t size = (uint32_t)values.size();
-	if (size == 0) return "[]";
 
-	std::stringstream ss;
-	ss << "[";
-	for (uint32_t i = 0; i < size - 1; ++i)
+
+
+class Object
+{
+public:
+	Object & M(const std::vector<std::string> &values)
 	{
-		ss << values[i] << ",";
+		if (values.size() > 0)
+		{
+			m_dsl += "{" + values[0];
+			for (uint32_t i = 1; i < values.size(); ++i)
+			{
+				m_dsl += "," + values[i];
+			}
+			m_dsl += "}";
+		}
+
+		return *this;
 	}
-	ss << values[size - 1] << "]";
-	return ss.str();
-}
 
-static inline std::string MakeArrayString(const std::vector<std::string> &values) {
-	uint32_t size = (uint32_t)values.size();
-	if (size == 0) return "[]";
+	const inline std::string Dsl() { return m_dsl; }
 
-	std::stringstream ss;
-	ss << "[";
-	for (uint32_t i = 0; i < size - 1; ++i)
+private:
+	std::string m_dsl;
+};
+
+class Array
+{
+public:
+	Array & M(const std::vector<std::string> &values)
 	{
-		ss << "\"" << values[i] << "\",";
+		uint32_t size = (uint32_t)values.size();
+		m_dsl += "[";
+		if (size > 0)
+		{
+			m_dsl += values[0];
+			for (uint32_t i = 1; i < size - 1; ++i)
+			{
+				m_dsl += "," + values[i];
+			}
+		}
+		m_dsl += "]";
+		return *this;
 	}
-	ss << "\"" << values[size - 1] << "\"]";
-	return ss.str();
-}
+
+	Array & MS(const std::vector<std::string> &values)
+	{
+		uint32_t size = (uint32_t)values.size();
+		m_dsl += "[";
+		if (size > 0)
+		{
+			m_dsl += "\"" + values[0] + "\"";
+			for (uint32_t i = 1; i < size; ++i)
+			{
+				m_dsl += ",\"" + values[i] + "\"";
+			}
+		}
+		m_dsl += "]";
+		return *this;
+	}
+
+
+	const inline std::string Dsl() { return m_dsl; }
+
+private:
+	std::string m_dsl;
+};
 
 template <class T>
 static inline std::string MakeObject(const std::vector<T> &values) {
@@ -162,31 +202,60 @@ static inline std::string MakeObject(const std::vector<T> &values) {
 	return ss.str();
 }
 
+static inline std::string MakeObject(const std::string &key, const char *value) {
+	return "{\"" + key + "\":\"" + value + "\"}";
+}
+
+static inline std::string MakeObject(const std::string &key, const std::string &value) {
+	return MakeObject(key, value.c_str());
+}
+
+static inline std::string MakeObject(const std::string &key, Object &obj) {
+	return "{\"" + key + "\":" + obj.Dsl() + "}";
+}
+
 template <class T>
-static inline std::string MakeObject(const std::string &key, T value){
+static inline std::string MakeObject(const std::string &key, T value) {
 	std::stringstream ss;
 	ss << "{\"" << key << "\":" << value << "}";
 	return ss.str();
 }
 
-static inline std::string MakeObjectString(const std::string &key, const std::string &value){
-	std::stringstream ss;
-	ss << "{\"" << key << "\":\"" << value << "\"}";
-	return ss.str();
+static inline std::string MakeObject(const std::vector<std::string> &fields) {
+	if (fields.size() < 1)
+	{
+		return "";
+	}
+	std::string ret = "{" + fields[0];
+	for (uint32_t i = 1; i < fields.size(); ++i)
+	{
+		ret += "," + fields[1];
+	}
+
+	return ret += "}";
+}
+
+
+static inline std::string MakePair(const std::string &key, const char *value) {
+	return "\"" + key + "\":\"" + value + "\"";
+}
+
+static inline std::string MakePair(const std::string &key, const std::string &value) {
+	return MakePair(key, value.c_str());
+}
+
+static inline std::string MakePair(const std::string &key, Array &arr) {
+	return "\"" + key + "\":" + arr.Dsl();
 }
 
 template <class T>
-static inline std::string MakePair(const std::string &key, T value){
+static inline std::string MakePair(const std::string &key, T value) {
 	std::stringstream ss;
 	ss << "\"" << key << "\":" << value;
 	return ss.str();
 }
 
-static inline std::string MakePairString(const std::string &key, const std::string &value){
-	std::stringstream ss;
-	ss << "\"" << key << "\":\"" << value << "\"";
-	return ss.str();
-}
+
 
 void Escape(const char word, std::string &result)
 {
@@ -311,18 +380,21 @@ static inline std::string Term(const std::string &field, const T value, U boost)
 	return ss.str();
 }
 
-template <class T>
-static inline std::string Terms(const std::string &field, const std::vector<T> &values) {	
-	std::stringstream ss;
-	ss << "{\"terms\":{\"" << field << "\":" << MakeArray(values) << "}}";
-	return ss.str();
-}
 
 static inline std::string Terms(const std::string &field, const std::vector<std::string> &values) {
 	std::stringstream ss;
-	ss << "{\"terms\":{\"" << field << "\":\"" << MakeArrayString(values) << "\"}}";
+	ss << "{\"terms\":{\"" << field << "\":" << Array().MS(values).Dsl() << "}}";
 	return ss.str();
 }
+
+template <class T>
+static inline std::string Terms(const std::string &field, const std::vector<T> &values) {	
+	std::stringstream ss;
+	ss << "{\"terms\":{\"" << field << "\":" << Array().M(values) << "}}";
+	return ss.str();
+}
+
+
 
 template <class T, class U = int>
 static inline std::string MatchDSL(const std::string &field, const T &value, U boost) {
@@ -365,19 +437,19 @@ static inline std::string Bool(const std::vector<std::string> &fields) {
 }
 
 static inline std::string Must(const std::vector<std::string> &fields) {
-	return MakePair("must", MakeArray(fields));
+	return MakePair("must", Array().M(fields));
 }
 
 static inline std::string MustNot(const std::vector<std::string> &fields) {
-	return MakePair("must_not", MakeArray(fields));
+	return MakePair("must_not", Array().M(fields));
 }
 
 static inline std::string Should(const std::vector<std::string> &fields) {
-	return MakePair("should", MakeArray(fields));
+	return MakePair("should", Array().M(fields));
 }
 
 static inline std::string Filter(const std::vector<std::string> &fields) {
-	return MakePair("filter", MakeArray(fields));
+	return MakePair("filter", Array().M(fields));
 }
 
 static inline std::string BMust(const std::vector<std::string> &fields) {
@@ -416,11 +488,32 @@ static std::string MSearch(const std::string &index, const std::string &type, co
 	return ret + dsl + "\r\n";
 }
 
+static inline std::string Nested(const std::string &path, const std::string &query)
+{
+	std::stringstream ss;
+	ss << "{\"nested\":{\"path\":\"" << path << "\",\"query\":" << query << "}}";
+	return ss.str();
+}
 
+static inline std::string Nested(const std::string &path, const std::string &scoreMode, const std::string &query)
+{
+	std::stringstream ss;
+	ss << "{\"nested\":{\"path\":\"" << path << "\",\"score_mode\":\"" << scoreMode  << "\",\"query\":" << query << "}}";
+	return ss.str();
+}
+
+static inline std::string NestedFilter(const std::string &path, const std::string &filter)
+{
+	std::stringstream ss;
+	ss << "\"nested\":{\"path\":\"" << path << "\",\"filter\":" << filter << "}";
+	return ss.str();
+}
 
 class Request
 {
 public:
+	Request() {}
+
 	inline Request & From(uint32_t from) {
 		m_dsl += MakePair("from", from) + ",";
 		return *this;
@@ -438,12 +531,12 @@ public:
 	}
 
 	inline Request & Source(const std::vector<std::string> &fields) {
-		m_dsl += MakePair("_source", MakeArrayString(fields)) + ",";
+		m_dsl += MakePair("_source", Array().MS(fields)) + ",";
 		return *this;
 	}
 
 	inline Request & Sort(const std::vector<std::string> &fields){
-		m_dsl += MakePair("sort", MakeArray(fields)) + ",";
+		m_dsl += MakePair("sort", Array().M(fields)) + ",";
 		return *this;
 	}
 
@@ -458,11 +551,11 @@ public:
 		return *this;
 	}
 
-	// todo nested
 	// todo agg
 	// todo geo
+	// todo not
 
-	inline std::string GetDsl(){return m_dsl;}
+	inline std::string Dsl(){return m_dsl;}
 
 private: 
 	std::string m_dsl;
