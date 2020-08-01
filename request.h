@@ -8,8 +8,115 @@
 #include <sstream>
 #include <stdint.h>
 
+
+// private
+namespace _ES
+{
+
+static inline std::string Range(const std::string &field, const std::string &oper, const char *value) {
+	std::stringstream ss;
+	ss << "{\"range\":{\"" << field << "\":{\"" << oper << "\":\"" << value << "\"}}}";
+	return ss.str();
+}
+
+template<class T>
+static inline std::string Range(const std::string &field, const std::string &oper, const T &value) {
+	std::stringstream ss;
+	ss << "{\"range\":{\"" << field << "\":{\"" << oper << "\":" << value << "}}}";
+	return ss.str();
+}
+
+static inline std::string Range(const std::string &field, const std::string &oper, const char *value, const std::string &other) {
+	std::stringstream ss;
+	ss << "{\"range\":{\"" << field << "\":{\"" << oper << "\":\"" << value << "\"," << other << "}}}";
+	return ss.str();
+}
+
+template<class T>
+static inline std::string Range(const std::string &field, const std::string &oper, const T &value, const std::string &other) {
+	std::stringstream ss;
+	ss << "{\"range\":{\"" << field << "\":{\"" << oper << "\":" << value << "," << other <<  "}}}";
+	return ss.str();
+}
+
+static inline std::string Range2(const std::string &field, const std::string &cond1, const std::string &cond2, const std::string &other) {
+	std::stringstream ss;
+	ss << "{\"range\":{\"" << field << "\":{" << cond1 << "," << cond2 << "," << other << "}}}";
+	return ss.str();
+}
+
+}
+
+
+
+// interface
 namespace ES
 {
+
+
+#define RANGE(Func, Oper) \
+	static inline std::string Func(const std::string &field, const std::string &value) {\
+		return _ES::Range(field, Oper, value.c_str()); \
+	} \
+	template <class T> \
+	static inline std::string Func(const std::string &field, const T value) { \
+		return _ES::Range(field, Oper, value); \
+	} \
+	static inline std::string Func(const std::string &field, const std::string &value, const std::string &other) {\
+		return _ES::Range(field, Oper, value.c_str(), other); \
+	}\
+	template <class T> \
+	static inline std::string Func(const std::string &field, const T value, const std::string &other) { \
+		return _ES::Range(field, Oper, value, other); \
+	}
+
+#define RANGEEX_STRING(Oper1, Oper2) \
+	std::stringstream ss; \
+	ss << "{\"range\":{\"" << field << "\":{\""Oper1"\":\"" << value1 << "\",\""Oper2"\":\"" << value2 << "\"}}}"; \
+	return ss.str(); 
+
+#define RANGEEX_STRING_OTHER(Oper1, Oper2) \
+	std::stringstream ss; \
+	ss << "{\"range\":{\"" << field << "\":{\""Oper1"\":\"" << value1 << "\",\""Oper2"\":\"" << value2 << "\"," << other << "}}}"; \
+	return ss.str(); 
+
+#define RANGEEX(Func, Oper1, Oper2) \
+	static inline std::string Func(const std::string &field, const char *value1, std::string &value2) { \
+		RANGEEX_STRING(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const std::string &value1, const char *value2) { \
+		RANGEEX_STRING(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const char *value1, const char *value2) { \
+		RANGEEX_STRING(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const std::string &value1, const std::string &value2) { \
+		RANGEEX_STRING(Oper1, Oper2) \
+	}\
+	template<class T> \
+	static inline std::string Func(const std::string &field, const T value1, const T value2) { \
+		std::stringstream ss; \
+		ss << "{\"range\":{\"" << field << "\":{\""Oper1"\":" << value1 << ",\""Oper2"\":" << value2 << "}}}"; \
+		return ss.str(); \
+	}\
+	static inline std::string Func(const std::string &field, const char *value1, std::string &value2, const std::string &other) { \
+		RANGEEX_STRING_OTHER(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const std::string &value1, const char *value2, const std::string &other) { \
+		RANGEEX_STRING_OTHER(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const char *value1, const char *value2, const std::string &other) { \
+		RANGEEX_STRING_OTHER(Oper1, Oper2) \
+	} \
+	static inline std::string Func(const std::string &field, const std::string &value1, const std::string &value2, const std::string &other) { \
+		RANGEEX_STRING_OTHER(Oper1, Oper2) \
+	}\
+	template<class T> \
+	static inline std::string Func(const std::string &field, const T value1, const T value2, const std::string &other) { \
+		std::stringstream ss; \
+		ss << "{\"range\":{\"" << field << "\":{\""Oper1"\":" << value1 << ",\""Oper2"\":" << value2 << "," << other << "}}}"; \
+		return ss.str(); \
+	}
 
 template <class T>
 static inline std::string MakeArray(const std::vector<T> &values) {
@@ -139,27 +246,15 @@ void RegExpEscape(const char word, std::string &result)
 	}
 }
 
-static inline std::string Range1(const std::string &field, const std::string &cond1, const std::string &other = ""){
-	std::stringstream ss;
-	ss << "{\"range\":{\"" << field << "\":{" << cond1;
-	if (!other.empty())
-	{
-		ss << "," << other;
-	}
-	ss << "}}}";
-	return ss.str();
-}
+RANGE(Gt, "gt");
+RANGE(Gte, "gte");
+RANGE(Lt, "lt");
+RANGE(Lte, "lte");
 
-static inline std::string Range2(const std::string &field, const std::string &cond1, const std::string &cond2, const std::string &other = ""){
-	std::stringstream ss;
-	ss << "{\"range\":{\"" << field << "\":{" << cond1 << "," << cond2;
-	if (!other.empty())
-	{
-		ss << "," << other;
-	}
-	ss << "}}}";
-	return ss.str();
-}
+RANGEEX(GtLt, "gt", "lt");
+RANGEEX(GtLte, "gt", "lte");
+RANGEEX(GteLt, "gte", "lt");
+RANGEEX(GteLte, "gte", "lte");
 
 static inline std::string Missing(const std::string &field, const std::string &prefix) {
 	std::stringstream ss;
@@ -179,29 +274,41 @@ static inline std::string RegExp(const std::string &field, const std::string &re
 	return ss.str();
 }
 
-template <class T, class U = int>
-static inline std::string TermDSL(const std::string &field, const T &value, U boost = 0) {
+
+static inline std::string Term(const std::string &field, const char *value) {
 	std::stringstream ss;
-	if (boost != 0)
-		ss << "{\"term\":{\"" << field << "\":{\"term\":" << value << ",\"boost\":" << boost << "}}}";
-	else
-		ss << "{\"term\":{\"" << field << "\":" << value << "}}";
+	ss << "{\"term\":{\"" << field << "\":\"" << value << "\"}}";
 	return ss.str();
 }
 
-template <class T = int>
-static inline std::string Term(const std::string &field, const char *value, T boost = 0) {
-	return TermDSL(field, "\"" + std::string(value) + "\"", boost);
+static inline std::string Term(const std::string &field, const std::string &value) {
+	return Term(field, value.c_str());
 }
 
-template <class T = int>
-static inline std::string Term(const std::string &field, const std::string &value, T boost = 0) {
-	return TermDSL(field, "\"" + value + "\"", boost);
+template <class T>
+static inline std::string Term(const std::string &field, const T value) {
+	std::stringstream ss;
+	ss << "{\"term\":{\"" << field << "\":" << value << "}}";
+	return ss.str();
 }
 
-template <class T, class U = int>
-static inline std::string Term(const std::string &field, T value, U boost = 0) {
-	return TermDSL(field, value, boost);
+template <class T>
+static inline std::string Term(const std::string &field, const char *value, T boost) {
+	std::stringstream ss;
+	ss << "{\"term\":{\"" << field << "\":{\"term\":\"" << value << "\",\"boost\":" << boost << "}}}";
+	return ss.str();
+}
+
+template <class T>
+static inline std::string Term(const std::string &field, const std::string &value, T boost) {
+	return Term(field, value.c_str(), boost);
+}
+
+template <class T, class U>
+static inline std::string Term(const std::string &field, const T value, U boost) {
+	std::stringstream ss;
+	ss << "{\"term\":{\"" << field << "\":{\"term\":" << value << ",\"boost\":" << boost << "}}}";
+	return ss.str();
 }
 
 template <class T>
@@ -314,34 +421,48 @@ static std::string MSearch(const std::string &index, const std::string &type, co
 class Request
 {
 public:
+	inline Request & From(uint32_t from) {
+		m_dsl += MakePair("from", from) + ",";
+		return *this;
+	}
 
-	Request & Size(uint32_t size) {
+	inline Request & From(uint32_t from, uint32_t size) {
+		From(from);
+		Size(size);
+		return *this;
+	}
+
+	inline Request & Size(uint32_t size) {
 		m_dsl += MakePair("size", size) + ",";
 		return *this;
 	}
 
-	Request & Source(const std::vector<std::string> &fields) {
+	inline Request & Source(const std::vector<std::string> &fields) {
 		m_dsl += MakePair("_source", MakeArrayString(fields)) + ",";
 		return *this;
 	}
 
-	Request & Sort(const std::vector<std::string> &fields){
+	inline Request & Sort(const std::vector<std::string> &fields){
 		m_dsl += MakePair("sort", MakeArray(fields)) + ",";
 		return *this;
 	}
 
-	std::string Query(const std::string &dsl) {
+	inline std::string Query(const std::string &dsl) {
 		std::stringstream ss;
 		ss << "{" << m_dsl << "\"query\":" << dsl << "}";
 		return ss.str();
 	}
 
-	Request &operator << (const std::string &dsl){
+	inline Request &operator << (const std::string &dsl){
 		m_dsl += dsl;
 		return *this;
 	}
 
-	std::string GetDsl(){return m_dsl;}
+	// todo nested
+	// todo agg
+	// todo geo
+
+	inline std::string GetDsl(){return m_dsl;}
 
 private: 
 	std::string m_dsl;

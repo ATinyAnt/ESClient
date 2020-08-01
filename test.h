@@ -30,10 +30,7 @@ namespace TestES
 	{
 		Request r;
 		std::string dsl = r.Size(10).Source({"name"}).Query(
-			Range1(
-				"id",
-				MakePair("lt",567)
-			)
+			Lt("id", 567)
 		);
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
 	}
@@ -45,10 +42,7 @@ namespace TestES
 		std::string dsl = r.Size(10).Source({"name"}).Sort(
 			{MakeObject("timestamp",MakeObjectString("order", "desc"))}
 		).Query(
-			Range1(
-				"id",
-				MakePair("lt",567)
-			)
+			Lt("id", 567)
 		);
 		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
 	}
@@ -60,10 +54,7 @@ namespace TestES
 		std::string dsl1 = r1.Size(10).Source({"name"}).Sort(
 			{MakeObject("timestamp",MakeObjectString("order", "desc"))}
 		).Query(
-			Range1(
-				"id",
-				MakePair("lt",567)
-			)
+			Lt("id", 567)
 		);
 
 		Request r2;
@@ -71,10 +62,7 @@ namespace TestES
 		std::string dsl2 = r2.Size(10).Source({"id"}).Sort(
 			{"{\"timestamp\":{\"order\":\"desc\"}}"}
 		).Query(
-			Range1(
-				"age",
-				MakePair("gt",56)
-			)
+			Gt("id", 567)
 		);
 
 		Request m;
@@ -95,6 +83,60 @@ namespace TestES
 		printf("%s:%s\n",  __FUNCTION__, dsl.c_str());
 	}
 
+	void Fun7()
+	{
+		Request r;
+		std::string dsl = r.From(0).Size(10).Source({ "id" }).Query(RegExp("name", ".*Tiny.*"));
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun8()
+	{
+		Request r;
+
+		std::string dsl = r.Size(10).Source({ "name" }).Sort(
+		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+			).Query(
+				Gt("id", 567)
+				);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+
+	void Fun9()
+	{
+		Request r;
+
+		std::string dsl = r.Size(10).Source({ "name" }).Sort(
+		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+			).Query(
+				Gt("id", "5ab")
+				);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun10()
+	{
+		Request r;
+		std::string dsl = r.Size(10).Source({ "name" }).Query(
+			BMust({
+			Term("id",2356,1.5)
+		})
+			);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
+
+	void Fun11()
+	{
+		Request r;
+
+		std::string dsl = r.Size(10).Source({ "name" }).Sort(
+		{ MakeObject("timestamp",MakeObjectString("order", "desc")) }
+			).Query(
+				GtLt("id", "5ab", "6ab")
+			);
+		printf("%s:%s\n", __FUNCTION__, dsl.c_str());
+	}
 }
 
 
